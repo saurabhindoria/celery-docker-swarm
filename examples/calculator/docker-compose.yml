@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+    rabbit:
+        hostname: rabbit
+        image: rabbitmq:management
+        environment:
+            - RABBITMQ_DEFAULT_USER=admin
+            - RABBITMQ_DEFAULT_PASS=mypass
+        ports:
+            - 15672:15672
+        deploy:
+            replicas: 1
+            restart_policy:
+                condition: on-failure
+
+    flower:
+      image: mher/flower:0.9.5
+      environment:
+        - CELERY_BROKER_URL=amqp://admin:mypass@rabbit:5672//
+        - FLOWER_PORT=5555
+        - FLOWER_PURGE_OFFLINE_WORKERS=10
+      ports:
+        - 5555:5555
+      links:
+        - rabbit
+      deploy:
+        replicas: 1
+        restart_policy:
+          condition: on-failure
+
+    addition:
+        image: calc-addition
+        build:
+            context: .
+            dockerfile: ./addition/Dockerfile
+        links:
+            - rabbit
+        deploy:
+            replicas: 2
+            restart_policy:
+                condition: on-failure
+
+    subtraction:
+      image: calc-subtraction
+      build:
+        context: .
+        dockerfile: ./subtraction/Dockerfile
+      links:
+        - rabbit
+      deploy:
+        replicas: 2
+        restart_policy:
+          condition: on-failure
+
+    multiplication:
+      image: calc-multiplication
+      build:
+        context: .
+        dockerfile: ./multiplication/Dockerfile
+      links:
+        - rabbit
+      deploy:
+        replicas: 2
+        restart_policy:
+          condition: on-failure
+
+    division:
+      image: calc-division
+      build:
+        context: .
+        dockerfile: ./division/Dockerfile
+      links:
+        - rabbit
+      deploy:
+        replicas: 2
+        restart_policy:
+          condition: on-failure
+
+    producer:
+        image: calc-producer
+        build:
+            context: .
+            dockerfile: ./producer/Dockerfile
+        ports:
+            - 5000:5000
+        deploy:
+            replicas: 1
+            restart_policy:
+                condition: on-failure
+
